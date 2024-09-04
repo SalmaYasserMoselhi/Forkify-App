@@ -3,6 +3,7 @@ import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 
 import 'regenerator-runtime/runtime'; // polyfilling async/await
 import 'core-js/stable'; // polyfilling everything else from es6 features
@@ -25,6 +26,12 @@ const controlRecipes = async function () {
     // Render spinner
     recipeView.renderSpinner();
 
+    // Update results view to mark selected search result
+    resultsView.update(model.getSearchResultsByPage());
+
+    // Update bookmarks view
+    bookmarksView.update(model.state.bookmarks);
+
     // Load recipe
     await model.loadRecipe(id);
 
@@ -33,6 +40,7 @@ const controlRecipes = async function () {
   } catch (error) {
     // Render error
     recipeView.renderError();
+    console.error(error);
   }
 };
 
@@ -67,10 +75,42 @@ const controlPagination = function (goToPage) {
   paginationView.render(model.state.search);
 };
 
+const controlServings = function (newServings) {
+  // Update recipe servings (in state)
+  model.updateServings(newServings);
+
+  // Update recipe view
+  recipeView.update(model.state.recipe);
+};
+
+const controlAddBookmark = function () {
+  if (!model.state.recipe.bookmarked) {
+    // Add bookmark
+    model.addBookmark();
+  } else {
+    // Remove bookmark
+    model.removeBookmark(model.state.recipe.id);
+  }
+
+  // Update recipe view
+  recipeView.update(model.state.recipe);
+
+  // Render bookmarks
+  bookmarksView.render(model.state.bookmarks);
+};
+
+const controlBookmarks = function () {
+  // Render bookmarks
+  bookmarksView.render(model.state.bookmarks);
+};
+
 // Publisher-Subscriber Pattern, here init is the Subscriber
 const init = function () {
   // Pass the controlRecipes function to the addHandlerRender method to be called when the event is triggered
+  bookmarksView.addHandlerRender(controlBookmarks);
   recipeView.addHandlerRender(controlRecipes);
+  recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
 };
