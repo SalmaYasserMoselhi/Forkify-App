@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime'; // polyfilling async/await
-import { API_URL, RES_PER_PAGE } from './config.js';
-import { getJSON } from './helper.js';
+import { API_URL, RES_PER_PAGE, DEV_KEY } from './config.js';
+import { AJAX } from './helper.js';
 
 export const state = {
   recipe: {},
@@ -13,22 +13,26 @@ export const state = {
   bookmarks: [],
 };
 
+const createRecipeObject = function (data) {
+  const { recipe } = data.data;
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    publisher: recipe.publisher,
+    sourceUrl: recipe.source_url,
+    image: recipe.image_url,
+    servings: recipe.servings,
+    cookingTime: recipe.cooking_time,
+    ingredients: recipe.ingredients,
+    ...(recipe.key && { key: recipe.key }), // if recipe.key exists, add it to the object
+  };
+};
+
 // Async function -> returns a promise, so you should await for it
 export const loadRecipe = async function (id) {
   try {
-    const data = await getJSON(`${API_URL}/${id}`);
-
-    const { recipe } = data.data;
-    state.recipe = {
-      id: recipe.id,
-      title: recipe.title,
-      publisher: recipe.publisher,
-      sourceUrl: recipe.source_url,
-      image: recipe.image_url,
-      servings: recipe.servings,
-      cookingTime: recipe.cooking_time,
-      ingredients: recipe.ingredients,
-    };
+    const data = await AJAX(`${API_URL}/${id}?key=${DEV_KEY}`);
+    state.recipe = createRecipeObject(data);
 
     // Check if the recipe is already bookmarked
     if (state.bookmarks.some(bookmark => bookmark.id === id))
@@ -43,7 +47,7 @@ export const loadSearchResults = async function (query) {
   try {
     state.search.query = query;
 
-    const data = await getJSON(`${API_URL}?search=${query}`);
+    const data = await AJAX(`${API_URL}?search=${query}&key=${DEV_KEY}`);
 
     state.search.results = data.data.recipes.map(recipe => {
       return {
@@ -51,6 +55,7 @@ export const loadSearchResults = async function (query) {
         title: recipe.title,
         publisher: recipe.publisher,
         image: recipe.image_url,
+        ...(recipe.key && { key: recipe.key }),
       };
     });
     state.search.page = 1;
@@ -109,3 +114,40 @@ const init = function () {
   if (storedBookmarks) state.bookmarks = JSON.parse(storedBookmarks);
 };
 init();
+
+export const uploadRecipe = async function (newRecipe) {
+  try {
+    const ingredients = Object.entries(newRecipe)
+      .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
+      .map(ingredient => {
+        const ingredientArr = ingredient[1].split(',').map(ing =>  ing.trim());
+
+        if (ingredientArr.length !== 3)
+          throw new Error(
+            'Wrong ingredient format! Please use the correct format :)'
+          );
+
+        const [quantity, unit, description] = ingredientArr;
+        return { quantity: quantity ? +quantity : null, unit, description };
+      });
+
+    const recipe = {
+      title: newRecipe.title,
+      source_url: newRecipe.sourceUrl,
+      image_url: newRecipe.image,
+      publisher: newRecipe.publisher,
+      cooking_time: +newRecipe.cookingTime,
+      servings: +newRecipe.servings,
+      ingredients,
+    };
+    console.log(recipe);
+    // https://forkify-api.herokuapp.com/api/v2/recipes?search=pizza&key=<insert your key>
+    const data = await AJAX(`${API_URL}?key=${DEV_KEY}`, recipe);
+
+    // After sending the recipe, we need to convert the recipe object to the format we want to use it in our view
+    state.recipe = createRecipeObject(data);
+    addBookmark(state.recipe);
+  } catch (error) {
+    throw error;
+  }
+};

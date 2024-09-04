@@ -8,13 +8,22 @@ const timeout = function (s) {
   });
 };
 
-export const getJSON = async function (url) {
+export const AJAX = async function (url, uploadedData = undefined) {
   try {
-    // As soon as any promise of the race rejects or fulfills , the race will be settled
-    const res = await Promise.race([fetch(url), timeout(TIMEOUT_SEC)]);
+    const fetchData = uploadedData
+      ? fetch(url, {
+          method: 'POST', // Tell the api that I am sending data
+          headers: {
+            'Content-Type': 'application/json', // Tell the api that the data in the json format
+          },
+          body: JSON.stringify(uploadedData),
+        })
+      : fetch(url);
+
+    // if there is uploadedData, after sending data to the api, it will also be returned back
+    const res = await Promise.race([fetchData, timeout(TIMEOUT_SEC)]);
     const data = await res.json();
     if (!res.ok) throw new Error(`${res.status}, ${data.message}`);
-
     return data;
   } catch (error) {
     // Propagating the error down from one async function to the other

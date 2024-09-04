@@ -3,6 +3,17 @@ import icons from '../../img/icons.svg';
 
 class PaginationView extends View {
   _parentElement = document.querySelector('.pagination');
+  
+  addHandlerClick(handler) {
+    this._parentElement.addEventListener('click', function (e) {
+      const button = e.target.closest('button');
+      if (!button) return;
+  
+      const goToPage = +button.dataset.goto;
+  
+      handler(goToPage);
+    });
+  }
 
   _generateMarkup() {
     const currentPage = this._data.page;
@@ -55,16 +66,6 @@ class PaginationView extends View {
       `;
   }
 
-  addHandlerClick(handler) {
-    this._parentElement.addEventListener('click', function (e) {
-      const button = e.target.closest('button');
-      if (!button) return;
-
-      const goToPage = +button.dataset.goto;
-
-      handler(goToPage);
-    });
-  }
 }
 
 export default new PaginationView();

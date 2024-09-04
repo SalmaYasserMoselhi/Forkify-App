@@ -16,8 +16,6 @@ class SearchView {
       handler();
     });
 
-    const button = this._parentElement.querySelector('.search__btn');
-    button.addEventListener('click', handler);
   }
 
   _clearInput() {

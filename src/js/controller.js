@@ -1,9 +1,11 @@
 import * as model from './model.js';
+import { MODEL_CLOSE_IN_SEC } from './config.js';
 import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
 import bookmarksView from './views/bookmarksView.js';
+import addRecipeView from './views/addRecipeView.js';
 
 import 'regenerator-runtime/runtime'; // polyfilling async/await
 import 'core-js/stable'; // polyfilling everything else from es6 features
@@ -40,18 +42,17 @@ const controlRecipes = async function () {
   } catch (error) {
     // Render error
     recipeView.renderError();
-    console.error(error);
   }
 };
 
 const controlSearchResults = async function () {
   try {
+    // Render spinner
+    resultsView.renderSpinner();
+
     // Get search query
     const query = searchView.getQuery();
     if (!query) return;
-
-    // Render spinner
-    resultsView.renderSpinner();
 
     // Load search results
     await model.loadSearchResults(query);
@@ -63,7 +64,7 @@ const controlSearchResults = async function () {
     // Render initial paginination buttons
     paginationView.render(model.state.search);
   } catch (error) {
-    console.log(error);
+    resultsView.renderError();
   }
 };
 
@@ -104,6 +105,36 @@ const controlBookmarks = function () {
   bookmarksView.render(model.state.bookmarks);
 };
 
+const controlAddRecipe = async function (newRecipe) {
+  try {
+    // Render spinner
+    addRecipeView.renderSpinner();
+
+    // Upload recipe to API
+    await model.uploadRecipe(newRecipe);
+    console.log(model.state.recipe);
+
+    // Render recipe
+    recipeView.render(model.state.recipe);
+
+    // Success Message
+    addRecipeView.renderMessage();
+
+    // Render bookmark view
+    bookmarksView.render(model.state.bookmarks);
+
+    // Change id in URL using history API
+    window.history.pushState(null, '', `#${model.state.recipe.id}`);
+
+    // Close form
+    setTimeout(function () {
+      addRecipeView.toggleWindow();
+    }, MODEL_CLOSE_IN_SEC * 1000);
+  } catch (error) {
+    addRecipeView.renderError(error.message);
+  }
+};
+
 // Publisher-Subscriber Pattern, here init is the Subscriber
 const init = function () {
   // Pass the controlRecipes function to the addHandlerRender method to be called when the event is triggered
@@ -113,5 +144,6 @@ const init = function () {
   recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHandlerSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
+  addRecipeView.addHandlerUpload(controlAddRecipe);
 };
 init();
