@@ -1,7 +1,7 @@
 import View from './View.js';
 
 import icons from '../../img/icons.svg';
-import { Fraction } from 'fractional';
+import { Fraction } from 'Fractional';
 
 class RecipeView extends View {
   _parentElement = document.querySelector('.recipe');
@@ -40,14 +40,14 @@ class RecipeView extends View {
 
             <div class="recipe__info-buttons">
               <button class="btn--tiny btn--update-servings" data-update-to="${
-                this._data.servings - 1
+                this._data.servings / 2
               }">
                 <svg>
                   <use href="${icons}#icon-minus-circle"></use>
                 </svg>
               </button>
               <button class="btn--tiny btn--update-servings" data-update-to="${
-                this._data.servings + 1
+                this._data.servings * 2
               }">
                 <svg>
                   <use href="${icons}#icon-plus-circle"></use>
@@ -110,7 +110,7 @@ class RecipeView extends View {
         <use href="${icons}#icon-check"></use>
       </svg>
       <div class="recipe__quantity">${
-        ingredient.quantity ? new Fraction(ingredient.quantity).toString() : ''
+        ingredient.quantity ? new Fraction(ingredient.quantity) : ''
       }</div>
       <div class="recipe__description">
         <span class="recipe__unit">${ingredient.unit}</span>
@@ -130,8 +130,8 @@ class RecipeView extends View {
       const button = e.target.closest('.btn--update-servings');
       if (!button) return;
 
-      const newServings = +(button.dataset.updateTo);
-      if (newServings) handler(newServings);
+      const newServings = +button.dataset.updateTo;
+      if (newServings >= 1) handler(newServings);
     });
   }
 
