@@ -40,14 +40,14 @@ class RecipeView extends View {
 
             <div class="recipe__info-buttons">
               <button class="btn--tiny btn--update-servings" data-update-to="${
-                this._data.servings / 2
+                this._data.servings - 1
               }">
                 <svg>
                   <use href="${icons}#icon-minus-circle"></use>
                 </svg>
               </button>
               <button class="btn--tiny btn--update-servings" data-update-to="${
-                this._data.servings * 2
+                this._data.servings + 1
               }">
                 <svg>
                   <use href="${icons}#icon-plus-circle"></use>
@@ -110,7 +110,7 @@ class RecipeView extends View {
         <use href="${icons}#icon-check"></use>
       </svg>
       <div class="recipe__quantity">${
-        ingredient.quantity ? new Fraction(ingredient.quantity) : ''
+        ingredient.quantity ? new Fraction(ingredient.quantity.toFixed(2)).toString() : ''
       }</div>
       <div class="recipe__description">
         <span class="recipe__unit">${ingredient.unit}</span>
